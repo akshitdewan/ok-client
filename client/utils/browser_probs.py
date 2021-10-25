@@ -31,6 +31,8 @@ def negate(x):
 """
 questions = {'identity': q1_code, 'negate': q2_code}
 question_tests = {'identity': 'identity(1)', 'negate': 'negate(-2)'}
+
+
 def initialize_files():
     # typically will be done on 61a/88 end (not here)
     with open(mcq_file_name, "w+") as f:
@@ -38,13 +40,14 @@ def initialize_files():
             f.write(f'# {question}')
             f.write(questions[question] + "\n")
 
+
 def write_mcq_prob_locally(prob_name, mcq_answer):
     cur_line = -1
     with open(mcq_file_name, "r") as f:
         for i, line in enumerate(f):
             values = line.split()
             if prob_name in values:
-                cur_line = i + 2 # add 2 to get to return
+                cur_line = i + 2  # add 2 to get to return
 
     assert cur_line >= 0, "Problem not found in file"
 
@@ -54,6 +57,7 @@ def write_mcq_prob_locally(prob_name, mcq_answer):
 
     with open(mcq_file_name, "w") as f:
         f.writelines(contents)
+
 
 @app.route("/save", methods=['POST'])
 def save_code():
@@ -65,17 +69,24 @@ def save_code():
             write_mcq_prob_locally(question, data[question]['code'])
     # return {}
     # do some grading stuff
-    args = gargs[0] # should be class variable later
+    args = gargs[0]  # should be class variable later
     assign = load_assignment(args.config, args)
-    msgs = messages.Messages()
-    proto_name = "grading"
-    module = importlib.import_module(assign._PROTOCOL_PACKAGE + '.' + proto_name)
+    # msgs = messages.Messages()
+    # proto_name = "grading"
+    # module = importlib.import_module(
+    #     assign._PROTOCOL_PACKAGE + '.' + proto_name)
 
-    proto = module.protocol(assign.cmd_args, assign)
-    log.info('Loaded protocol "{}"'.format(proto_name))
-    log.info('Execute {}.run()'.format(proto_name))
-    proto.run(msgs)
-    print(msgs)
+    # proto = module.protocol(assign.cmd_args, assign)
+    # log.info('Loaded protocol "{}"'.format(proto_name))
+    # log.info('Execute {}.run()'.format(proto_name))
+    # proto.run(msgs)
+    # print(msgs)
+    msgs = messages.Messages()
+    print(f"protocol map = {assign.protocol_map}")
+    for name, proto in assign.protocol_map.items():
+        print(proto)
+        log.info('Execute {}.run()'.format(name))
+        proto.run(msgs)
     msgs['timestamp'] = str(datetime.now())
     feedback = 'Correct!'
     print("finish save code")
@@ -91,13 +102,16 @@ def save_code():
 #     return send_from_directory(os.getcwd(), f'static/{path}')
 #     # return render_template(f'{os.getcwd()}/static/index.html', opt1='1')
 
+
 @app.route("/index.js")
 def get_index():
     return send_from_directory(os.getcwd(), f'static/index.js')
     # return render_template(f'{os.getcwd()}/static/index.html', opt1='1')
 
+
 def open_browser():
     webbrowser.open_new('http://127.0.0.1:3000/index.html')
+
 
 @app.route('/index.html')
 def index():
@@ -106,12 +120,14 @@ def index():
     # return render_template(f'{os.getcwd()}/static/index.html')
     return render_template('index.html', q1=question_tests['identity'], q2=question_tests['negate'], feedback=None)
 
+
 def open_in_browser(args):
     initialize_files()
     port = 3000
     gargs[0] = args
     Timer(1, open_browser).start()
     app.run(port=port)
+
 
 # disable flask logging
 log = logging.getLogger('werkzeug')
