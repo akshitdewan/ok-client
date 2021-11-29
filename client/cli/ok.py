@@ -50,6 +50,7 @@ from client.cli.common import messages
 from client.utils import auth
 from client.utils import output
 from client.utils import software_update
+from client.utils import browser_probs
 from datetime import datetime
 import argparse
 import client
@@ -188,6 +189,9 @@ def parse_input(command_input=None):
                         help="do not check for ok updates")
     server.add_argument('--update', action='store_true',
                         help="update ok and exit")
+    # option for opening in browser
+    server.add_argument('--browser', action='store_true',
+                        help="update ok and exit")              
 
     return parser.parse_args(command_input)
 
@@ -210,7 +214,8 @@ def main():
                 args.server, client.__version__, client.FILE_NAME, timeout=10)
         exit(not did_update)  # exit with error if ok failed to update
 
-    assign = None
+    force_authenticate = args.authenticate
+    retry = True
     try:
         if args.get_token:
             if args.nointeract:
@@ -219,7 +224,11 @@ def main():
             access_token = auth.authenticate(args, force=True)
             print("Token: {}".format(access_token))
             exit(not access_token)  # exit with error if no access_token
-
+        
+        if args.browser:
+            browser_probs.open_in_browser(args)
+            exit(0)
+        
         # Instantiating assignment
         assign = assignment.load_assignment(args.config, args)
 
@@ -256,8 +265,6 @@ def main():
             assign.autobackup(run_sync=False)
             exit(0)
 
-        force_authenticate = args.authenticate
-        retry = True
         while retry:
             retry = False
             if force_authenticate:
